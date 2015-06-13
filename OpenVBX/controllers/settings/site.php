@@ -129,22 +129,22 @@ class Site extends User_Controller
 		$data['tenant_mode'] = self::MODE_SINGLE;
 
 		$data['openvbx_version'] = OpenVBX::version();
-		
+
 		// determine wether we can successfully use the GitHub api library
 		// to check our current tag against available tags. See ::can_check_upgrade()
 		// for a full explanation.
 		// @todo - find a more graceful way around this
 		// @todo - notify admin that checks can't be made?
 		$data['check_upgrade'] = $this->can_check_upgrade();
-		
+
 		if($this->tenant->name == 'default')
 		{
 			$data['tenant_mode'] = self::MODE_MULTI;
 			$data['tenants'] = $this->settings->get_all_tenants();
-			
+
 			if ($data['check_upgrade']) {
 				$data['latest_version'] = $this->get_latest_tag();
-		
+
 				if (version_compare($data['openvbx_version'], $data['latest_version'], '<'))
 				{
 					$data['upgrade_notice'] = true;
@@ -159,25 +159,25 @@ class Site extends User_Controller
 
 		if ($this->db->dbdriver == 'mysqli')
 		{
-			$mysql_version = $this->db->conn_id->server_info;
+			$mysqli_version = $this->db->conn_id->server_info;
 		}
-		else 
+		else
 		{
-			$mysql_version = mysql_get_server_info($this->db->conn_id);
+			$mysqli_version = mysqli_get_server_info($this->db->conn_id);
 		}
 
 		$data['server_info'] = array(
 			'system_version' => php_uname(),
 			'php_version' => phpversion(),
 			'php_sapi' => php_sapi_name(),
-			'mysql_version' => $mysql_version,
-			'mysql_driver' => $this->db->dbdriver,
+			'mysqli_version' => $mysqli_version,
+			'mysqli_driver' => $this->db->dbdriver,
 			'apache_version' => $_SERVER['SERVER_SOFTWARE'],
 			'current_url' => site_url($this->uri->uri_string()).' ('.$_SERVER['SERVER_ADDR'].')'
 		);
 
 		$data['available_themes'] = $this->get_available_themes();
-		
+
 		// get plugin data
 		$plugins = Plugin::all();
 		foreach($plugins as $plugin)
@@ -216,7 +216,7 @@ class Site extends User_Controller
 					$data['error'] .= $e->getMessage();
 			}
 		}
-				
+
 		// verify Client Application data
 		$data['client_application_error'] = false;
 		$account = OpenVBX::getAccount();
@@ -233,7 +233,7 @@ class Site extends User_Controller
 					// application missing
 					$data['client_application_error'] = 2;
 				}
-				elseif (strlen($application_voice_url) == 0 || 
+				elseif (strlen($application_voice_url) == 0 ||
 						strlen($application_voice_fallback_url) == 0)
 				{
 					// urls are missing
@@ -285,26 +285,26 @@ class Site extends User_Controller
 					{
 						continue;
 					}
-					
+
 					if ($name == 'application_sid')
 					{
 						$app_sid = $value;
 						$process_app = true;
 					}
-					
-					if ($name == 'connect_application_sid') 
+
+					if ($name == 'connect_application_sid')
 					{
 						$connect_app_sid = $value;
 						$process_connect_app = true;
 					}
-					
+
 					// add new settings if they don't already exist
 					if (!$this->settings->set($name, trim($value), $this->tenant->id))
 					{
 						$this->settings->add($name, trim($value), $this->tenant->id);
 					}
 				}
-				
+
 				// rewrite enabled is a marker to detect which group of settings
 				// we're currently saving
 				// @todo - include a 'section' or 'group' param in the submitted
@@ -323,18 +323,18 @@ class Site extends User_Controller
 				{
 					$this->update_connect_app($connect_app_sid);
 				}
-				
+
 				// Client App
 				if ($process_app)
 				{
 					$this->update_application($app_sid);
 				}
-				
+
 				$this->session->set_flashdata('error', 'Settings have been saved');
 			}
 			catch(Exception $e) {
 				$data['error'] = true;
-				switch($e->getCode()) 
+				switch($e->getCode())
 				{
 					case '0':
 						$data['message'] = $message = 'Could not Authenticate with Twilio. '.
@@ -347,7 +347,7 @@ class Site extends User_Controller
 				$this->session->set_flashdata('error', $message);
 			}
 		}
-		
+
 		flush_minify_caches();
 
 		if($this->response_type == 'html')
@@ -362,7 +362,7 @@ class Site extends User_Controller
 	{
 		$update_app = false;
 		$current_app_sid = $this->settings->get('application_sid', $this->tenant->id);
-		
+
 		if (empty($app_sid) && !empty($current_app_sid))
 		{
 			// disassociate the current app from this install
@@ -391,7 +391,7 @@ class Site extends User_Controller
 				)
 			);
 
-			if ($app_sid != $current_app_sid) 
+			if ($app_sid != $current_app_sid)
 			{
 				// app sid changed, disassociate the old app from this install
 				$update_app[] = array(
@@ -410,7 +410,7 @@ class Site extends User_Controller
 		{
 			$account = OpenVBX::getAccount();
 
-			foreach ($update_app as $app) 
+			foreach ($update_app as $app)
 			{
 				try {
 					$application = $account->applications->get($app['app_sid']);
@@ -423,17 +423,17 @@ class Site extends User_Controller
 												'Application: '.$e->getMessage());
 					throw new SiteException($e->getMessage(), $e->getCode());
 				}
-			}					
+			}
 		}
 	}
 
 	private function update_connect_app($connect_app_sid)
 	{
-		if (!empty($connect_app_sid) && $this->tenant->id == VBX_PARENT_TENANT) 
+		if (!empty($connect_app_sid) && $this->tenant->id == VBX_PARENT_TENANT)
 		{
 			$account = OpenVBX::getAccount();
 			$connect_app = $account->connect_apps->get($connect_app_sid);
-		
+
 			$required_settings = array(
 				'HomepageUrl' => site_url(),
 				'AuthorizeRedirectUrl' => site_url('/auth/connect'),
@@ -443,19 +443,19 @@ class Site extends User_Controller
 					'post-all'
 				)
 			);
-		
+
 			$updated = false;
-			foreach ($required_settings as $key => $setting) 
+			foreach ($required_settings as $key => $setting)
 			{
 				$app_key = Services_Twilio::decamelize($key);
-				if ($connect_app->$app_key != $setting) 
+				if ($connect_app->$app_key != $setting)
 				{
 					$connect_app->$app_key = $setting;
 					$updated = true;
 				}
 			}
-		
-			if ($updated) 
+
+			if ($updated)
 			{
 				$connect_app->update(array(
 					'FriendlyName' => $connect_app->friendly_name,
@@ -470,17 +470,17 @@ class Site extends User_Controller
 		}
 	}
 
-	private function create_application_for_subaccount($tenant_id, $name, $accountSid) 
+	private function create_application_for_subaccount($tenant_id, $name, $accountSid)
 	{
 		$appName = "OpenVBX - {$name}";
-		
+
 		$application = false;
 		try {
 			$accounts = OpenVBX::getAccounts();
 			$sub_account = $accounts->get($accountSid);
-			foreach ($sub_account->applications as $_application) 
+			foreach ($sub_account->applications as $_application)
 			{
-				if ($application->friendly_name == $appName) 
+				if ($application->friendly_name == $appName)
 				{
 					$application = $_application;
 				}
@@ -501,11 +501,11 @@ class Site extends User_Controller
 		);
 
 		try {
-			if (!empty($application)) 
+			if (!empty($application))
 			{
 				$application->update($params);
 			}
-			else 
+			else
 			{
 				$application = $sub_account->applications->create($appName, $params);
 			}
@@ -520,21 +520,21 @@ class Site extends User_Controller
 	private function add_tenant()
 	{
 		$tenant = $this->input->post('tenant');
-		
+
 		if (empty($tenant['url_prefix']))
 		{
 			$data['error'] = true;
 			$data['message'] = 'A valid tenant name is required';
 			$this->session->set_flashdata('error', 'Failed to add new tenant: '.$data['message']);
 		}
-		if (empty($tenant['admin_email']) || 
+		if (empty($tenant['admin_email']) ||
 			!filter_var($tenant['admin_email'], FILTER_VALIDATE_EMAIL))
 		{
 			$data['error'] = true;
 			$data['message'] = 'A valid admin email address is required';
 			$this->session->set_flashdata('error', 'Failed to add new tenant: '.$data['message']);
 		}
-		
+
 		if(!empty($tenant) && empty($data['error']))
 		{
 			try {
@@ -567,9 +567,9 @@ class Site extends User_Controller
 				}
 
 				$this->settings->set('from_email', $tenant['admin_email'], $data['id']);
-				$friendlyName = substr($tenant['url_prefix'].' - '.$tenant['admin_email'], 0, 32);					
+				$friendlyName = substr($tenant['url_prefix'].' - '.$tenant['admin_email'], 0, 32);
 
-				switch ($this->input->post('auth_type')) 
+				switch ($this->input->post('auth_type'))
 				{
 					case 'connect':
 						$auth_type = VBX_Settings::AUTH_TYPE_CONNECT;
@@ -584,7 +584,7 @@ class Site extends User_Controller
 				 * Only do app setup for sub-accounts.
 				 * Connect tenants will get set up after going through the connect process.
 				 */
-				if ($auth_type === VBX_Settings::AUTH_TYPE_SUBACCOUNT) 
+				if ($auth_type === VBX_Settings::AUTH_TYPE_SUBACCOUNT)
 				{
 					try {
 						$accounts = OpenVBX::getAccounts();
@@ -598,9 +598,9 @@ class Site extends User_Controller
 						$tenant_token = $sub_account->auth_token;
 						$this->settings->add('twilio_sid', $tenant_sid, $data['id']);
 						$this->settings->add('twilio_token', $tenant_token, $data['id']);
-						
-						$app_sid = $this->create_application_for_subaccount($data['id'], 
-													$tenant['url_prefix'], 
+
+						$app_sid = $this->create_application_for_subaccount($data['id'],
+													$tenant['url_prefix'],
 													$tenant_sid);
 						$this->settings->add('application_sid', $app_sid, $data['id']);
 					}
@@ -610,12 +610,12 @@ class Site extends User_Controller
 				}
 				elseif ($auth_type === VBX_Settings::AUTH_TYPE_CONNECT)
 				{
-					// when using connect, we won't get a sid, token, or 
+					// when using connect, we won't get a sid, token, or
 					// app_sid until user first login
 					$tenant_id = $tenant_token = $app_sid = null;
 					$this->settings->add('tenant_first_run', 1, $data['id']);
 				}
-				else 
+				else
 				{
 					throw new VBX_SettingsException('Unknown auth-type encountered during '.
 													'tenant creation');
@@ -625,7 +625,7 @@ class Site extends User_Controller
 					'id' => $data['id'],
 					'type' => $auth_type
 				));
-				
+
 				$tenant_defaults = array(
 					'transcriptions' => 1,
 					'voice' => 'man',
@@ -637,7 +637,7 @@ class Site extends User_Controller
 				foreach ($tenant_defaults as $key => $value) {
 					$this->settings->set($key, $value, $data['id']);
 				}
-				
+
 				$this->db->trans_complete();
 				$this->session->set_flashdata('error', 'Added new tenant');
 				$user->send_new_user_notification();
@@ -673,12 +673,12 @@ class Site extends User_Controller
 		$tenant_settings = $this->get_current_settings($id);
 
 		$data['tenant'] = $tenant;
-		$data['tenant_settings'] = $tenant_settings;		
+		$data['tenant_settings'] = $tenant_settings;
 		$data['available_themes'] = $this->get_available_themes();
 		$data['rewrite_enabled'] = array(
 			'value' => intval($this->settings->get('rewrite_enabled', VBX_PARENT_TENANT))
 		);
-		
+
 		$this->respond('Tenant Settings', 'settings/tenant', $data);
 	}
 
@@ -722,18 +722,18 @@ class Site extends User_Controller
 		}
 		return $available_themes;
 	}
-	
+
 	/**
 	 * We need to check for a few obscure parameters to see
 	 * if we're gonna have problems with the GitHub API during
 	 * the update check.
-	 * 
+	 *
 	 * If either `safe_mode` or `open_basedir` are in effect then
-	 * `CURLOPT_FOLLOWLOCATION` won't set as a curlopt. Since the 
+	 * `CURLOPT_FOLLOWLOCATION` won't set as a curlopt. Since the
 	 * GitHub API uses this and also uses `curl_setopt_array` that
 	 * means that if either of these are set then all of the curl
 	 * settings fail to set.
-	 * 
+	 *
 	 * This is a stop-gap measure until something more graceful
 	 * can be implemented
 	 *
@@ -743,7 +743,7 @@ class Site extends User_Controller
 	{
 		$this->safe_mode = ini_get('safe_mode');
 		$this->open_basedir = ini_get('open_basedir');
-		
+
 		$can_check = true;
 		if ($this->safe_mode || strlen($this->open_basedir) > 0)
 		{
@@ -752,11 +752,11 @@ class Site extends User_Controller
 
 		return $can_check;
 	}
-	
+
 	/**
 	 * Get the latest available tag from Github
 	 * Latest tag == latest released version
-	 * 
+	 *
 	 * Does not account for beta or alpha versions (which we haven't ever tagged)
 	 *
 	 * @return string
@@ -767,21 +767,21 @@ class Site extends User_Controller
 		{
 			return $cache;
 		}
-		
+
 		try {
 			include_once(APPPATH . 'libraries/VBX_Github_Client.php');
-			$gh = new VBX_Github_Client;			
+			$gh = new VBX_Github_Client;
 			$tags = $gh->getTags();
-						
+
 			$latest = false;
-					
+
 			if (is_array($tags) && count($tags) > 0)
 			{
 				$list = array_keys($tags);
 				usort($list, array($this, 'version_sort'));
 				$latest = array_pop($list);
 			}
-								
+
 			$this->api_cache->set('latest_version', $latest, 'Site', $this->tenant->id);
 		}
 		catch (Exception $e) {
@@ -791,7 +791,7 @@ class Site extends User_Controller
 
 		return $latest;
 	}
-	
+
 	public function version_sort($a, $b) {
 		return version_compare($a, $b, '<') ? -1 : version_compare($a, $b, '==') ? 0 : 1;
 	}

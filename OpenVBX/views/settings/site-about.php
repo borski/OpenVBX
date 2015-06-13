@@ -8,24 +8,24 @@
 	<li><b>Site Revision:</b> <?php echo $site_revision; ?></li>
 	<li><b>Rewrite enabled:</b> <?php echo $rewrite_enabled['value']? 'Yes' : 'No' ?></li>
 <?php endif; /* if parent tenant */ ?>
-	<li><b>Client Application:</b><br />&nbsp; - <?php 
+	<li><b>Client Application:</b><br />&nbsp; - <?php
 		if (empty($client_application_error))
 		{
 			echo $client_application->voice_url.'<br>&nbsp; - '.$client_application->voice_fallback_url;
 		}
-		else 
+		else
 		{
 			echo '<b>An error occurred when requesting the Client Application data:</b> '.$client_application_error_message;
 		}
-	?>		
+	?>
 	</li>
 </ul>
 
 <h3>Caching</h3>
 <ul>
-	<li><b>Caching Enabled:</b> <?php 
-		echo ($cache_enabled ? 'true' : 'false'); 
-		if ($cache_enabled) 
+	<li><b>Caching Enabled:</b> <?php
+		echo ($cache_enabled ? 'true' : 'false');
+		if ($cache_enabled)
 		{
 			$cache_type = $this->cache->friendly_name();
 			$more_info = $this->cache->more_info();
@@ -36,9 +36,9 @@
 			echo ', '.$cache_type;
 		}
 	?></li>
-	<li><b>API Caching Enabled:</b> <?php 
-		echo ($api_cache_enabled ? 'true' : 'false'); 
-		if ($api_cache_enabled) 
+	<li><b>API Caching Enabled:</b> <?php
+		echo ($api_cache_enabled ? 'true' : 'false');
+		if ($api_cache_enabled)
 		{
 			$api_cache_type = $this->api_cache->friendly_name();
 			$api_more_info = $this->api_cache->more_info();
@@ -57,15 +57,15 @@
 	<h3>Server Info</h3>
 	<ul>
 		<li><b>Apache Version:</b> <?php echo $server_info['apache_version']; ?></li>
-		<li><b>PHP Version:</b> <?php echo $server_info['php_version']; ?></li> 
-		<li><b>PHP Interface:</b> <?php echo $server_info['php_sapi']; 
+		<li><b>PHP Version:</b> <?php echo $server_info['php_version']; ?></li>
+		<li><b>PHP Interface:</b> <?php echo $server_info['php_sapi'];
 			if (!empty($_SERVER['GATEWAY_INTERFACE']))
 			{
 				echo ' ('.$_SERVER['GATEWAY_INTERFACE'].')';
 			}
 		?></li>
-		<li><b>MySQL Version:</b> <?php echo $server_info['mysql_version']; ?></li>
-		<li><b>Database configuration:</b> <?php echo "{$server_info['mysql_driver']}://{$this->db->username}@{$this->db->hostname}/{$this->db->database}" ?></li>
+		<li><b>MySQL Version:</b> <?php echo $server_info['mysqli_version']; ?></li>
+		<li><b>Database configuration:</b> <?php echo "{$server_info['mysqli_driver']}://{$this->db->username}@{$this->db->hostname}/{$this->db->database}" ?></li>
 		<li><b>System OS:</b> <?php echo $server_info['system_version']; ?></li>
 		<li><b>Current Url:</b> <?php echo $server_info['current_url']; ?></li>
 	</ul>

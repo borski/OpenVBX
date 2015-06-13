@@ -4,7 +4,7 @@
  *  Version 1.1 (the "License"); you may not use this file except in
  *  compliance with the License. You may obtain a copy of the License at
  *  http://www.mozilla.org/MPL/
- 
+
  *  Software distributed under the License is distributed on an "AS IS"
  *  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  *  License for the specific language governing rights and limitations
@@ -18,7 +18,7 @@
 
  * Contributor(s):
  **/
-	
+
 define('AUDIOPATH', dirname(FCPATH) . '/audio-uploads/');
 
 class VBX_Audio_File extends MY_Model
@@ -41,7 +41,7 @@ class VBX_Audio_File extends MY_Model
 	{
 		parent::__construct($object);
 	}
-	
+
 	static function get($search_options = array())
 	{
 		if(empty($search_options))
@@ -56,13 +56,13 @@ class VBX_Audio_File extends MY_Model
 
 		return self::search($search_options, 1, 0);
 	}
-	
+
 	static function search($search_options = array(), $limit = -1, $offset = 0)
 	{
 		$sql_options = array();
-							
+
 		$instance = new self();
-		
+
 		$values = parent::search(
 			self::$__CLASS__,
 			$instance->table,
@@ -77,13 +77,13 @@ class VBX_Audio_File extends MY_Model
 
 	public function save()
 	{
-		$now_in_mysql_format = date('Y-m-d H:i:s');
+		$now_in_mysqli_format = date('Y-m-d H:i:s');
 
-		$this->updated = $now_in_mysql_format;
-		
+		$this->updated = $now_in_mysqli_format;
+
 		if (!($this->id > 0))
 		{
-			$this->created = $now_in_mysql_format;
+			$this->created = $now_in_mysqli_format;
 		}
 
 		return parent::save();

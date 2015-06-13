@@ -27,7 +27,7 @@ class Install extends Controller {
 
 	public $tests;
 	public $pass;
-	
+
 	private $account;
 	protected $min_php_version = MIN_PHP_VERSION;
 
@@ -39,15 +39,15 @@ class Install extends Controller {
 			$this->config->load('openvbx');
 		}
 
-		if(file_exists(APPPATH . 'config/database.php') 
-			AND version_compare(PHP_VERSION, $this->min_php_version, '>=')) 
+		if(file_exists(APPPATH . 'config/database.php')
+			AND version_compare(PHP_VERSION, $this->min_php_version, '>='))
 		{
 			$this->load->database();
 			redirect('');
 		}
-		
-		// cache is evil when not handled properly, assume the 
-		// possibility that we're being reinstalled so lets clear 
+
+		// cache is evil when not handled properly, assume the
+		// possibility that we're being reinstalled so lets clear
 		// any possibly lingering cache artifacts
 		$this->cache = OpenVBX_Cache_Abstract::load();
 		$this->cache->enabled(true);
@@ -71,7 +71,7 @@ class Install extends Controller {
 
 		$this->openvbx_settings = array();
 		$this->openvbx = array();
-		
+
 		$this->openvbx_settings['twilio_sid'] = trim($this->input->post('twilio_sid'));
 		$this->openvbx_settings['twilio_token'] = trim($this->input->post('twilio_token'));
 		$this->openvbx_settings['connect_application_sid'] = trim($this->input->post('connect_application_sid'));
@@ -112,7 +112,7 @@ class Install extends Controller {
 						'Supported: '.PHP_VERSION,
 						'You must be running at least PHP '.$this->min_php_version.'; you are using ' . PHP_VERSION);
 
-		$this->add_test(function_exists('mysql_connect'),
+		$this->add_test(function_exists('mysqli_connect'),
 						'MySQL',
 						'supported',
 						'missing');
@@ -132,7 +132,7 @@ class Install extends Controller {
 						'supported',
 						'missing, but optional',
 						false);
-						
+
 		$this->add_test(extension_loaded('memcache'),
 						'Memcache',
 						'supported',
@@ -155,7 +155,7 @@ class Install extends Controller {
 						'Config Dir',
 						'writable',
 						'permission denied: '.APPPATH.'config');
-						
+
 		$this->add_test(is_writable(APPPATH.'../audio-uploads'),
 						'Upload Dir',
 						'writable',
@@ -190,7 +190,7 @@ class Install extends Controller {
 			'message' => ($pass ? $pass_text : $fail_text)
 		);
 
-		if($required) 
+		if($required)
 		{
 			$this->pass = $this->pass && $pass;
 		}
@@ -238,27 +238,27 @@ class Install extends Controller {
 		{
 			$this->openvbx_settings['application_sid'] = $this->get_application($this->openvbx_settings);
 
-			if(!($dbh = @mysql_connect($database['default']['hostname'],
+			if(!($dbh = @mysqli_connect($database['default']['hostname'],
 									   $database['default']['username'],
 									   $database['default']['password'])))
 			{
 				throw new InstallException( "Failed to connect to database: "
-											. mysql_error(), 2 );
+											. mysqli_error(), 2 );
 			}
 
 			// test for mysqli compat
-			if (function_exists('mysqli_connect')) 
+			if (function_exists('mysqli_connect'))
 			{
 				// server info won't work without first selecting a table
-				mysql_select_db($database['default']['database']);
-				$server_version = mysql_get_server_info($dbh);
+				mysqli_select_db($database['default']['database']);
+				$server_version = mysqli_get_server_info($dbh);
 				if (!empty($server_version)) {
-					if (version_compare($server_version, '4.1.13', '>=') 
-						&& version_compare($server_version, '5', '<')) 
+					if (version_compare($server_version, '4.1.13', '>=')
+						&& version_compare($server_version, '5', '<'))
 					{
 						$database['default']['dbdriver'] = 'mysqli';
 					}
-					elseif (version_compare($server_version, '5.0.7', '>=')) 
+					elseif (version_compare($server_version, '5.0.7', '>='))
 					{
 						$database['default']['dbdriver'] = 'mysqli';
 					}
@@ -266,7 +266,7 @@ class Install extends Controller {
 			}
 
 			$this->setup_database($database, $dbh);
-			$this->setup_config($database, $openvbx);			
+			$this->setup_config($database, $openvbx);
 			$this->setup_openvbx_settings($openvbx_settings);
 			$this->setup_user($user);
 
@@ -288,21 +288,21 @@ class Install extends Controller {
 
         $this->json_return($json);
 	}
-	
-	private function setup_connect_app($settings) 
+
+	private function setup_connect_app($settings)
 	{
 		try {
 			$account = OpenVBX::getAccount($settings['twilio_sid'], $settings['twilio_token']);
 			$connect_application = $account->connect_apps->get($settings['connect_application_sid']);
-			
+
 			if ($connect_application->sid == $settings['connect_application_sid'])
 			{
 				$site_url = site_url();
-				if ($settings['rewrite_enabled']) 
+				if ($settings['rewrite_enabled'])
 				{
 					$site_url = str_replace('/index.php', '', $site_url);
 				}
-			
+
 				$required_settings = array(
 					'HomepageUrl' => $site_url,
 					'AuthorizeRedirectUrl' => $site_url.'/auth/connect',
@@ -312,19 +312,19 @@ class Install extends Controller {
 						'post-all'
 					)
 				);
-		
+
 				$updated = false;
-				foreach ($required_settings as $key => $setting) 
+				foreach ($required_settings as $key => $setting)
 				{
 					$app_key = Services_Twilio::decamelize($key);
-					if ($connect_application->$app_key != $setting) 
+					if ($connect_application->$app_key != $setting)
 					{
 						$connect_application->$app_key = $setting;
 						$updated = true;
 					}
 				}
 
-				if ($updated) 
+				if ($updated)
 				{
 					$connect_application->update(array(
 						'FriendlyName' => $connect_application->friendly_name,
@@ -345,9 +345,9 @@ class Install extends Controller {
 
 	private function setup_database($database, $dbh)
 	{
-		if(!mysql_select_db($database['default']['database'], $dbh))
+		if(!mysqli_select_db($database['default']['database'], $dbh))
 		{
-			throw new InstallException( "Failed to access database: ". mysql_error($dbh), 2);
+			throw new InstallException( "Failed to access database: ". mysqli_error($dbh), 2);
 		}
 
 		$sql_file = file_get_contents(APPPATH . '../openvbx.sql');
@@ -360,10 +360,10 @@ class Install extends Controller {
 				continue;
 			}
 
-			if(!mysql_query($sql, $dbh))
+			if(!mysqli_query($sql, $dbh))
 			{
-				throw new InstallException( "Failed to run sql: ".$sql. " :: ". 
-											mysql_error($dbh), 2);
+				throw new InstallException( "Failed to run sql: ".$sql. " :: ".
+											mysqli_error($dbh), 2);
 			}
 		}
 
@@ -498,28 +498,28 @@ class Install extends Controller {
 	 * Check for the existence of a Twilio Client specific application
 	 * Create one if necessary
 	 *
-	 * @param array $settings 
+	 * @param array $settings
 	 * @return string Application Sid
 	 */
-	private function get_application($settings) 
+	private function get_application($settings)
 	{
 		try
 		{
 			$app_token = md5($_SERVER['REQUEST_URI']);
 			$app_name = "OpenVBX - {$app_token}";
 
-			if (empty($this->account)) 
+			if (empty($this->account))
 			{
 				$this->account = OpenVBX::getAccount($settings['twilio_sid'], $settings['twilio_token']);
 			}
 			$applications = $this->account->applications->getIterator(0, 10, array(
 				'FriendlyName' => $app_name
 			));
-			
+
 			$application = false;
 			foreach ($applications as $_application)
 			{
-				if ($_application->friendly_name == $app_name) 
+				if ($_application->friendly_name == $app_name)
 				{
 					$application = $_application;
 					break;
@@ -527,7 +527,7 @@ class Install extends Controller {
 			}
 
 			$site_url = site_url();
-			if ($settings['rewrite_enabled']) 
+			if ($settings['rewrite_enabled'])
 			{
 				$site_url = str_replace('/index.php', '', $site_url);
 			}
@@ -546,7 +546,7 @@ class Install extends Controller {
 			{
 				$application->update($params);
 			}
-			else 
+			else
 			{
 				$application = $this->account->applications->create($app_name, $params);
 			}
@@ -565,8 +565,8 @@ class Install extends Controller {
 		$json = array(
 			'success' => true
 		);
-		
-		if($step == 1) 
+
+		if($step == 1)
 		{
             $this->json_return($json);
 		}
@@ -596,9 +596,9 @@ class Install extends Controller {
 	function validate_step2()
 	{
 		$json = array(
-			'success' => true, 
-			'step' => 2, 
-			'message' => 
+			'success' => true,
+			'step' => 2,
+			'message' =>
 			'success'
 		);
 
@@ -606,11 +606,11 @@ class Install extends Controller {
 
 		try
 		{
-			if(!($dbh = @mysql_connect($database['default']['hostname'],
+			if(!($dbh = @mysqli_connect($database['default']['hostname'],
 									   $database['default']['username'],
 									   $database['default']['password'])))
 			{
-				$error = mysql_error();
+				$error = mysqli_error();
 				$json['errors'] = array(
 					'hostname' => $error,
 					'username' => '',
@@ -619,9 +619,9 @@ class Install extends Controller {
 				throw new InstallException("Failed to connect to database: $error", 2);
 			}
 
-			if(!mysql_select_db($database['default']['database'], $dbh))
+			if(!mysqli_select_db($database['default']['database'], $dbh))
 			{
-				$error = mysql_error($dbh);
+				$error = mysqli_error($dbh);
 				$json['errors'] = array('database_name' => $error );
 				throw new InstallException("Failed to access database: $error", 2);
 			}
@@ -645,10 +645,10 @@ class Install extends Controller {
 	function validate_step3()
 	{
 		$this->load->model('vbx_settings');
-		
+
 		$json = array(
-			'success' => true, 
-			'step' => 3, 
+			'success' => true,
+			'step' => 3,
 			'message' => 'success'
 		);
 		$twilio_sid = $this->openvbx_settings['twilio_sid'];
@@ -665,20 +665,20 @@ class Install extends Controller {
 			 * confident of success.
 			 */
 			$status = $account->type;
-			if (empty($status)) 
+			if (empty($status))
 			{
 				throw new InstallException('Unable to access Twilio Account');
 			}
 
 			// check the connect app if a sid is provided
-			if (!empty($connect_app)) 
+			if (!empty($connect_app))
 			{
 				try {
 					$connect_application = $account->connect_apps->get($connect_app);
 					$friendly_name = $connect_application->friendly_name;
 				}
 				catch (Exception $e) {
-					switch ($e->getCode()) 
+					switch ($e->getCode())
 					{
 						case 0:
 							// return a better message than "resource not found"
@@ -695,7 +695,7 @@ class Install extends Controller {
 		{
 			$json['success'] = false;
 
-			switch ($e->getCode()) 
+			switch ($e->getCode())
 			{
 				case '20003':
 					$json['message'] = 'Authentication Failed. Invalid Twilio SID or Token.';
@@ -713,8 +713,8 @@ class Install extends Controller {
 	function validate_step4()
 	{
 		$json = array(
-			'success' => true, 
-			'step' => 4, 
+			'success' => true,
+			'step' => 4,
 			'message' => 'success'
 		);
 		$this->openvbx_settings['from_email'] = trim($this->input->post('from_email'));
@@ -726,7 +726,7 @@ class Install extends Controller {
 				throw new InstallException('Email address is invalid. Please check the '.
 											'address and try again.');
 			}
-			
+
 			$required_fields = array(
 				'from_email' => 'Notification Sender Email Address'
 			);
@@ -751,8 +751,8 @@ class Install extends Controller {
 		$ci =& get_instance();
 		$ci->load->model('vbx_user');
 		$json = array(
-			'success' => true, 
-			'step' => 5, 
+			'success' => true,
+			'step' => 5,
 			'message' => 'success'
 		);
 
@@ -768,17 +768,17 @@ class Install extends Controller {
 			{
 				throw new InstallException('Your administrative password was not typed correctly.');
 			}
-			
+
 			if (strlen($this->user['password']) < VBX_User::MIN_PASSWORD_LENGTH)
 			{
 				throw new InstallException('Password must be at least '.VBX_User::MIN_PASSWORD_LENGTH.' characters.');
 			}
-			
+
 			if (!filter_var($this->user['email'], FILTER_VALIDATE_EMAIL))
 			{
 				throw new InstallException('Email address is invalid. Please check the address and try again.');
 			}
-			
+
 			$required_fields = array(
 				'email' => 'Email Address',
 				'password' => 'Password',
@@ -799,9 +799,9 @@ class Install extends Controller {
 		}
 		return $json;
 	}
-	
+
 	/**
-	 * If .htaccess file doesn't exist try to preemptively 
+	 * If .htaccess file doesn't exist try to preemptively
 	 * create one from the htaccess_dist file. Nothing special,
 	 * just try to make a copy of the file. If it doesn't
 	 * work it doesn't work.

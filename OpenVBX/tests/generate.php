@@ -8,7 +8,7 @@ class Generate
     function __construct()
     {
         $this->CI = &set_controller('MY_Controller');
-        $this->CI->load->library('Spyc');        
+        $this->CI->load->library('Spyc');
     }
 
     function get_table_fields($table)
@@ -17,9 +17,9 @@ class Generate
 
         $i = 0;
         $fields = array();
-        while ($i < mysql_num_fields($result))
+        while ($i < mysqli_num_fields($result))
         {
-            $fields[$i] = mysql_fetch_field($result, $i);
+            $fields[$i] = mysqli_fetch_field($result, $i);
             /*
                 PROPERTIES
                 $field->blob
@@ -48,7 +48,7 @@ class Generate
         {
             $query .= " LIMIT " . (int) $limit;
         }
-        $res =  mysql_query($query) or die(mysql_error());
+        $res =  mysqli_query($query) or die(mysqli_error());
         return $res;
 
     }
@@ -58,7 +58,7 @@ class Generate
         $table_fields = $this->get_table_fields($table);
         $res = $this->select_from_table($table, $limit);
         $data = Array();
-        while (($row = mysql_fetch_assoc($res)) !== false)
+        while (($row = mysqli_fetch_assoc($res)) !== false)
         {
             $i = 0;
             foreach($row as $field => $val)
@@ -71,7 +71,7 @@ class Generate
             }
             $data['row' . (count($data) + 1)] = $row;
         }
-        mysql_free_result($res);
+        mysqli_free_result($res);
         return $data;
     }
 
@@ -82,33 +82,33 @@ class Generate
            die("\nSorry, the name of your test database must end on '_test'.\n".
            "This prevents deleting important data by accident.\n");
         }
-        
+
         //$this->CI->db->database = preg_replace("#_test$#", "_development", $this->CI->db->database);
         if (!$this->CI->db->db_select())
         {
-            die("\nCould not select development database.\n");   
-        }        
-       
+            die("\nCould not select development database.\n");
+        }
+
         $opts = getopts(array(
             'rows'     => array('switch' => 'n', 'type' => GETOPT_VAL, 'default' => 5),
             'fixtures' => array('switch' => 'f', 'type' => GETOPT_MULTIVAL),
             'output'   => array('switch' => 'o', 'type' => GETOPT_VAL, 'default' => dirname(__FILE__) . '/fixtures')
         ), $args);
-        
-        
+
+
         $rows     = $opts['rows'];
         $fixtures = $opts['fixtures'];
         $output   = rtrim(str_replace('\\','/',$opts['output']), '/') . '/';
         if (!@chdir(dirname(__FILE__) . '/' . $output))
         {
-            die("\nOutput directory '$output' does not exist.\n");   
+            die("\nOutput directory '$output' does not exist.\n");
         }
-                               
-        
+
+
         $tables = $this->CI->db->list_tables();
         if (count($fixtures) == 0)
         {
-            $fixtures = $tables;    
+            $fixtures = $tables;
         }
         else
         {
@@ -118,21 +118,21 @@ class Generate
                 if (!in_array($fixture, $tables))
                 {
                     die("\nTable `$fixture` does not exist.\n");
-                }   
-            }       
+                }
+            }
         }
-        
-        
+
+
         foreach ($fixtures as $fixture)
         {
             $filename = $fixture . '_fixt.yml';
             $data = $this->get_table_data($fixture, $rows);
             $yaml_data = $this->CI->spyc->dump($data);
-            
+
             $yaml_data = preg_replace('#^\-\-\-#', '', $yaml_data);
-            
+
             /* don't check if the file already exists */
-            file_put_contents($filename, $yaml_data);    
+            file_put_contents($filename, $yaml_data);
         }
     }
 }
@@ -156,5 +156,5 @@ Options:
 }
 else
 {
-    $generate->$generate_what($_SERVER['argv']);   
+    $generate->$generate_what($_SERVER['argv']);
 }
